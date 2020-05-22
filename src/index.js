@@ -13,48 +13,21 @@ function Square(props) {
     
   }
   
-  class Board extends React.Component {
-
-    constructor(props) {
-        super(props);
-        this.state = {
-            squares: Array(9).fill(null),
-            xIsNext: true
-        };
-    }
-
-    handleClick(i) {
-      const squares = this.state.squares.slice();            //created shallow copy of existing array
-      squares[i] = this.state.xIsNext ? 'X' : '0';
-      this.setState({                                     
-        squares: squares,                                   //state change occurs with setstate method like this
-        xIsNext: !this.state.xIsNext
-      });
-    }
+  class Board extends React.Component { 
 
     renderSquare(i) {
       return (
-      <Square value = {this.state.squares[i]} 
-      onClick = {() => this.handleClick(i)}
+      <Square value = {this.props.squares[i]} 
+      onClick = {() => this.props.onClick(i)}
       />
       );
     }
   
     render() {
 
-      const winner = calculateWinner(this.state.squares);
-      let status;
-      if(winner) {
-        status = 'Winner: ' + winner;                                     //identifying winner of the game
-      }
-      else {
-        status = 'Next player: ' + (this.state.xIsNext ? 'X' : '0');      //Identifying which player has next turn
-      }
-      
-  
       return (
         <div>
-          <div className="status">{status}</div>
+          
           <div className="board-row">
             {this.renderSquare(0)}
             {this.renderSquare(1)}
@@ -76,14 +49,57 @@ function Square(props) {
   }
   
   class Game extends React.Component {
+
+  constructor(props) {
+    super(props);
+    this.state = {
+      history: [{                                              //Array to have record of all the previous moves
+        squares: Array(9).fill(null),
+      }],
+      xIsNext: true
+    };
+  }
+
+  handleClick(i) {
+    const history = this.state.history;
+    const current = history[history.length - 1];
+    const squares = current.squares.slice();            //created shallow copy of existing array
+    if (calculateWinner(squares) || squares[i]) {
+      return;
+    }
+    
+    squares[i] = this.state.xIsNext ? 'X' : '0';
+    this.setState({                                     //state change occurs with setstate method like this
+      history: history.concat([{
+        squares: squares
+      }]),                                   
+      xIsNext: !this.state.xIsNext
+    });
+  }
+  
     render() {
+
+    const history = this.state.history;
+    const current = history[history.length - 1];
+    const winner = calculateWinner(current.squares);
+    let status;
+    if (winner) {
+      status = 'Winner: ' + winner;                                //identifying winner of the game
+    } 
+    else {
+      status = 'Next player: ' + (this.state.xIsNext ? 'X' : 'O');     //Identifying which player has next turn
+    }
+
       return (
         <div className="game">
           <div className="game-board">
-            <Board />
+            <Board 
+            squares = {current.squares}
+            onClick = {(i) => this.handleClick(i)}
+            />
           </div>
           <div className="game-info">
-            <div>{/* status */}</div>
+            <div>{status}</div>
             <ol>{/* TODO */}</ol>
           </div>
         </div>
@@ -99,6 +115,7 @@ function Square(props) {
   );
   
 
+  
   function calculateWinner(squares) {
     const lines = [
       [0, 1, 2],
